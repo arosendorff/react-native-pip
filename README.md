@@ -4,10 +4,6 @@
 
 `$ npm install react-native-pip --save`
 
-### Mostly automatic installation
-
-`$ react-native link react-native-pip`
-
 ## Usage
 ```javascript
 import Pip from 'react-native-pip';

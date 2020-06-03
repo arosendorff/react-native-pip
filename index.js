@@ -163,8 +163,8 @@ const PIPView = (props: PIPViewProps) => {
       case AnimationState.fadingIn:
         return {
           ...baseStyle,
-          width: 50,
-          height: 50,
+          width: '10%',
+          height: '10%',
           top: 10,
           right: 10,
           opacity: transitionAnimValue.interpolate({
@@ -176,8 +176,8 @@ const PIPView = (props: PIPViewProps) => {
       default:
         return {
           ...baseStyle,
-          width: 50,
-          height: 50,
+          width: '10%',
+          height: '10%',
           top: 10,
           right: 10,
         };

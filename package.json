@@ -1,7 +1,7 @@
 {
   "name": "react-native-pip",
   "title": "React Native Pip",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "TODO",
   "main": "index.js",
   "files": [
@@ -21,11 +21,11 @@
     "react-native"
   ],
   "author": {
-    "name": "Your Name",
-    "email": "yourname@email.com"
+    "name": "Adam Rosendorff",
+    "email": "addammac@gmail.com"
   },
   "license": "MIT",
-  "licenseFilename": "LICENSE",
+  "licenseFilename": "LICENSE.txt",
   "readmeFilename": "README.md",
   "peerDependencies": {
     "react": "^16.8.1",
