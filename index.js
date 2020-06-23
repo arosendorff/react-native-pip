@@ -36,9 +36,9 @@ const PIPView = (props: PIPViewProps) => {
   const [areViewsSwapped, setAreViewsSwapped] = useState(false);
   const [isMiniViewExpanded, setIsMiniViewExpanded] = useState(false);
 
-  // useEffect(() => {
-  //   animateTransition();
-  // }, []);
+  useEffect(() => {
+    console.log(animationState);
+  });
 
 
   const setDimensions = ({
@@ -133,7 +133,7 @@ const PIPView = (props: PIPViewProps) => {
 
   const getContractedViewStyle = () => {
     const baseStyle = {
-      zIndex: 2,
+      zIndex: 3,
     };
 
     switch (animationState) {
@@ -208,6 +208,19 @@ const PIPView = (props: PIPViewProps) => {
         {mainView}
       </TouchableWithoutFeedback>
     </Animated.View>
+
+    <Animated.View
+      pointerEvents={animationState === AnimationState.expanded ? 'auto' : 'none'}
+      style={{
+        width: '100%',
+        height: '100%',
+        backgroundColor: transitionAnimValue.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 1)'],
+        }),
+        zIndex: 2,
+      }}
+    />
 
     <Animated.View
       style={[
