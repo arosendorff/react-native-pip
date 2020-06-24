@@ -141,11 +141,11 @@ const PIPView = (props: PIPViewProps) => {
           ...baseStyle,
           width: transitionAnimValue.interpolate({
             inputRange: [0, 1],
-            outputRange: ['10%', '100%'],
+            outputRange: ['20%', '100%'],
           }),
           height: transitionAnimValue.interpolate({
             inputRange: [0, 1],
-            outputRange: ['10%', '100%'],
+            outputRange: ['20%', '100%'],
           }),
           top: transitionAnimValue.interpolate({
             inputRange: [0, 1],
@@ -160,8 +160,8 @@ const PIPView = (props: PIPViewProps) => {
       case AnimationState.fadingIn:
         return {
           ...baseStyle,
-          width: '10%',
-          height: '10%',
+          width: '20%',
+          height: '20%',
           top: 10,
           right: 10,
           opacity: transitionAnimValue.interpolate({
@@ -173,8 +173,8 @@ const PIPView = (props: PIPViewProps) => {
       default:
         return {
           ...baseStyle,
-          width: '10%',
-          height: '10%',
+          width: '20%',
+          height: '20%',
           top: 10,
           right: 10,
         };
@@ -200,13 +200,26 @@ const PIPView = (props: PIPViewProps) => {
     }
   };
 
+  const isPrimaryViewContracted = () => {
+    if (areViewsSwapped) {
+      return true;
+    } else {
+      return false;
+    }
+  };
+
+  const isSecondaryViewContracted = () => {
+    if (areViewsSwapped) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+
   return(
     <View
       onLayout={setDimensions}
-      style={{
-        width: '100%',
-        height: '100%',
-      }}
+      style={[props.style]}
     >
 
     <Animated.View
@@ -217,10 +230,17 @@ const PIPView = (props: PIPViewProps) => {
         },
       ]}
     >
+      {React.cloneElement(primaryView, {isContracted: isPrimaryViewContracted()})}
       <TouchableWithoutFeedback
         onPress={() => onPress('primaryView')}
       >
-        {primaryView}
+        <View
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+          }}
+        />
       </TouchableWithoutFeedback>
     </Animated.View>
 
@@ -248,10 +268,17 @@ const PIPView = (props: PIPViewProps) => {
         },
       ]}
     >
+      {React.cloneElement(secondaryView, {isContracted: isSecondaryViewContracted()})}
       <TouchableWithoutFeedback
         onPress={() => onPress('secondaryView')}
       >
-        {secondaryView}
+        <View
+          style={{
+            width: '100%',
+            height: '100%',
+            position: 'absolute',
+          }}
+        />
       </TouchableWithoutFeedback>
     </Animated.View>
 
