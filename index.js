@@ -1,4 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+  useRef,
+} from 'react';
 
 import {
   View,
@@ -11,22 +15,20 @@ import {
 import PropTypes from 'prop-types';
 
 const AnimationState = Object.freeze({
-  expanding: 'EXPANDING',
-  expanded: 'EXPANDED',
-  contracting: 'CONTRACTING',
+  resizing: 'RESIZING',
   fadingIn: 'FADING_IN',
   idle: 'IDLE',
 });
 
 type PIPViewProps = {
-  mainView: any,
-  miniView: any,
+  primaryView: any,
+  secondaryView: any,
 }
 
 const PIPView = (props: PIPViewProps) => {
   const {
-    mainView,
-    miniView,
+    primaryView,
+    secondaryView,
   } = props;
 
   const [transitionAnimValue] = useState(new Animated.Value(0));
@@ -34,11 +36,12 @@ const PIPView = (props: PIPViewProps) => {
   const [layoutDimensions, setLayoutDimensions] = useState({width: null, height: null});
   const [animationState, setAnimationState] = useState(AnimationState.idle);
   const [areViewsSwapped, setAreViewsSwapped] = useState(false);
-  const [isMiniViewExpanded, setIsMiniViewExpanded] = useState(false);
+  const [showBackgroundDimmer, setShowBackgroundDimmer] = useState(false);
+  const isMiniViewExpanded = useRef(0);
 
-  useEffect(() => {
-    console.log(animationState);
-  });
+  // useEffect(() => {
+  //   console.log(action);
+  // });
 
 
   const setDimensions = ({
@@ -50,70 +53,66 @@ const PIPView = (props: PIPViewProps) => {
     // });
   };
 
-  const animateExpandMiniView = () => {
-    if (isMiniViewExpanded) {
-      setAnimationState(AnimationState.contracting);
-    } else {
-      setAnimationState(AnimationState.expanding);
-    }
-
-    Animated.timing(
-      transitionAnimValue,
-      {
-        toValue: isMiniViewExpanded ? 0 : 1,
-        duration: 500,
-        useNativeDriver: false,
-      },
-    ).start(() => {
-      if (isMiniViewExpanded) {
-        setAnimationState(AnimationState.idle);
-      } else {
-        setAnimationState(AnimationState.expanded);
-      }
-      setIsMiniViewExpanded(!isMiniViewExpanded);
+  const toggleExpandMiniView = async (shouldDimBackground = true) => {
+    setShowBackgroundDimmer(shouldDimBackground);
+    setAnimationState(AnimationState.resizing);
+    await new Promise((resolve) => {
+      Animated.timing(
+        transitionAnimValue,
+        {
+          toValue: isMiniViewExpanded.current ? 0 : 1,
+          duration: 500,
+          useNativeDriver: false,
+        }
+      ).start(() => {
+        isMiniViewExpanded.current = !isMiniViewExpanded.current;
+        resolve();
+      });
     });
-  }
+  };
 
-  const animateSwapViewTransition = () => {
-    setAnimationState(AnimationState.expanding);
-    Animated.timing(
-      transitionAnimValue,
-      {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: false,
-      },
-    ).start(() => {
-      setAreViewsSwapped(!areViewsSwapped);
-      setAnimationState(AnimationState.fadingIn);
+  const animateSwapViews = async () => {
+    if (!isMiniViewExpanded.current) {
+      await toggleExpandMiniView(false);
+    }
+    setAreViewsSwapped(!areViewsSwapped);
+    setAnimationState(AnimationState.fadingIn);
+    await new Promise((resolve) => {
       Animated.timing(
         transitionAnimValue,
         {
           toValue: 2,
-          duration: 300,
+          duration: 500,
           useNativeDriver: false,
-        },
+        }
       ).start(() => {
-        setAnimationState(AnimationState.idle);
-        transitionAnimValue.setValue(0); // Reset animation
+        resetAnimationState();
+        resolve();
       });
     });
+  };
+
+  const resetAnimationState = () => {
+    isMiniViewExpanded.current = false;
+    setAnimationState(AnimationState.idle);
+    transitionAnimValue.setValue(0);
   }
 
-  const onPress = (view: 'miniview' | 'mainview') => {
-    if (view === 'miniview') {
-      if (areViewsSwapped) {
-        animateSwapViewTransition();
-      } else {
-        animateExpandMiniView();
-      }
-    } else if (view === 'mainview') {
-      if (areViewsSwapped) {
-        animateExpandMiniView();
-      } else {
-        animateSwapViewTransition();
-      }
+  const onPress = (view: 'primaryView' | 'secondaryView') => {
+    const actions = new Map([
+      ['primaryView', [animateSwapViews, toggleExpandMiniView]],
+      ['secondaryView', [toggleExpandMiniView, animateSwapViews]],
+    ]);
+    const action = actions.get(view);
+    if (areViewsSwapped) {
+      action[1]();
+    } else {
+      action[0]();
     }
+  }
+
+  const shouldFadeInBackgroundShow = () => {
+    return showBackgroundDimmer;
   }
 
   // TODO: (AR) rename these
@@ -137,9 +136,7 @@ const PIPView = (props: PIPViewProps) => {
     };
 
     switch (animationState) {
-      case AnimationState.contracting:
-      case AnimationState.expanding:
-      case AnimationState.expanded:
+      case AnimationState.resizing:
         return {
           ...baseStyle,
           width: transitionAnimValue.interpolate({
@@ -185,6 +182,24 @@ const PIPView = (props: PIPViewProps) => {
     }
   };
 
+  // The initial expanded view
+  const getPrimaryViewStyle = () => {
+    if (areViewsSwapped) {
+      return getContractedViewStyle();
+    } else {
+      return getExpandedViewStyle();
+    }
+  };
+
+  // The initial PIP view
+  const getSecondaryViewStyle = () => {
+    if (areViewsSwapped) {
+      return getExpandedViewStyle();
+    } else {
+      return getContractedViewStyle();
+    }
+  };
+
   return(
     <View
       onLayout={setDimensions}
@@ -196,44 +211,47 @@ const PIPView = (props: PIPViewProps) => {
 
     <Animated.View
       style={[
-        areViewsSwapped ? getContractedViewStyle() : getExpandedViewStyle(),
+        getPrimaryViewStyle(),
         {
           position: 'absolute',
         },
       ]}
     >
       <TouchableWithoutFeedback
-        onPress={() => onPress('mainview')}
+        onPress={() => onPress('primaryView')}
       >
-        {mainView}
+        {primaryView}
       </TouchableWithoutFeedback>
     </Animated.View>
 
-    <Animated.View
-      pointerEvents={animationState === AnimationState.expanded ? 'auto' : 'none'}
-      style={{
-        width: '100%',
-        height: '100%',
-        backgroundColor: transitionAnimValue.interpolate({
-          inputRange: [0, 1],
-          outputRange: ['rgba(0, 0, 0, 0)', 'rgba(0, 0, 0, 1)'],
-        }),
-        zIndex: 2,
-      }}
-    />
+    {
+      shouldFadeInBackgroundShow() ?
+      <Animated.View
+        pointerEvents={animationState === AnimationState.expanded ? 'auto' : 'none'}
+        style={{
+          width: '100%',
+          height: '100%',
+          opacity: transitionAnimValue,
+          backgroundColor: 'black',
+          zIndex: 2,
+        }}
+      />
+      :
+      null
+    }
 
     <Animated.View
       style={[
-        areViewsSwapped ? getExpandedViewStyle() : getContractedViewStyle(),
+        getSecondaryViewStyle(),
         {
           position: 'absolute',
         },
       ]}
     >
       <TouchableWithoutFeedback
-        onPress={() => onPress('miniview')}
+        onPress={() => onPress('secondaryView')}
       >
-        {miniView}
+        {secondaryView}
       </TouchableWithoutFeedback>
     </Animated.View>
 
